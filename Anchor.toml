@@ -11,8 +11,8 @@ treasury = "8LB9sB59tSfSAgUefmdme2SrGigvvnNVybgvDx757iuN"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 /home/dan/treasury/tests/treasury.ts"

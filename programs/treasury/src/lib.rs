@@ -1,51 +1,36 @@
 use anchor_lang::prelude::*;
 
-declare_id!("8LB9sB59tSfSAgUefmdme2SrGigvvnNVybgvDx757iuN");
+declare_id!("5y6nvZ2mHWG38oGN6jqUpg2mLFdsiWUBvJNDiQnHUBbS");
 
 const TREASURY_PDA_SEED : &[u8] = b"coloroffire";
-const TREASURY_ACCOUNT_PDA: &str = "CDAgKPcyadPx3r1uruUYPf8WBYJFrmp5AaqDLpBw1JKX";
 const VAULT_ADDRESS: &str ="3XWNZsQ8HXaUfhouH83zVP3MKLAHwe1tw8H9uX2Zojiz";
-const BUMP_SEED: &[u8] = b"255";
 
 #[program]
 pub mod pda_treasury{
 
-    use anchor_lang::solana_program::{entrypoint_deprecated::ProgramResult, program::invoke_signed, system_instruction};
-    use std::str::FromStr;
-
+    use anchor_lang::solana_program::entrypoint_deprecated::ProgramResult;
     use super :: *;
-    pub fn  initialize(ctx: Context<Initialize>) -> ProgramResult{
-        let (pda, _bump_seed) = Pubkey::find_program_address(&[TREASURY_PDA_SEED], ctx.program_id);
-        ctx.accounts.pda_account.user = *ctx.accounts.user.key;
-        ctx.accounts.pda_account.bump = ctx.accounts.pda_account.bump;
-        msg!("Found the PDA address-> {} and the Bump {}", pda, _bump_seed);
+    
+    pub fn initialize(ctx: Context<Initialize>) -> ProgramResult{
+        let account_data = &mut ctx.accounts.pda_account;
+        account_data.bump = ctx.bumps.pda_account; // stored bump
+        let (pda, bump_seed) = Pubkey::find_program_address(&[TREASURY_PDA_SEED], ctx.program_id);
+        msg!("Found the PDA address-> {} and the Bump {}", pda, bump_seed);
         Ok(())
     }
-    pub fn withdraw(ctx: Context<Withdraw>, lamports: u64) -> ProgramResult{
-        let program_id = Pubkey::from_str("8LB9sB59tSfSAgUefmdme2SrGigvvnNVybgvDx757iuN").unwrap();
-        let vault = Pubkey::from_str(VAULT_ADDRESS).unwrap();
-        let (pda , _bump_seed) = Pubkey::find_program_address(&[TREASURY_PDA_SEED], &program_id);
-        msg!("Prepare to withdraw from -> {} using bump {}", pda, _bump_seed);
-        let _ = invoke_signed( 
-        &system_instruction::transfer(
-            &pda, 
-            &vault, 
-            lamports,
-        ),
-        &[
-            ctx.accounts.treasury.to_account_info(),
-            ctx.accounts.vault.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-
-        ],
-        &[&[
-            TREASURY_PDA_SEED.as_ref(),
-            // &[_bump_seed],
-            BUMP_SEED.as_ref(),
-
-        ]],
+    pub fn withdraw(ctx: Context<Withdraw>, lamports: u64) -> ProgramResult {
+        let from = ctx.accounts.treasury.to_account_info();
+        let to = ctx.accounts.vault.to_account_info();
     
-    );
+        // Ensure the treasury has enough balance
+        if **from.lamports.borrow() < lamports {
+            return Err(ProgramError::InsufficientFunds.into());
+        }
+    
+        // Perform the transfer
+        **from.try_borrow_mut_lamports()? -= lamports;
+        **to.try_borrow_mut_lamports()? += lamports;
+    
         Ok(())
     }
 }
@@ -59,7 +44,7 @@ pub struct Initialize<'info> {
         seeds = [TREASURY_PDA_SEED],
         bump,
         payer = user,
-        space = 8 + 32 + 8 // space for Pubkey + u8 bump
+        space = 8 + 32 + 8
     )]
     pub pda_account: Account<'info, DataAccount>,
     pub system_program: Program<'info, System>,
@@ -67,19 +52,20 @@ pub struct Initialize<'info> {
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
-    #[account(address = TREASURY_ACCOUNT_PDA.parse::<Pubkey>().unwrap())]
-    /// CHECK: This field is marked as unsafe because it uses a direct address parse with no additional type checks. This is considered safe here because the address is a known constant and not derived from user input.
-    pub treasury: AccountInfo<'info>,
-    #[account(address = VAULT_ADDRESS.parse::<Pubkey>().unwrap())]
-    /// CHECK:
+    #[account(
+        mut,
+        seeds = [TREASURY_PDA_SEED],
+        bump,
+    )]
+    pub treasury: Account<'info, DataAccount>,
+    #[account(mut, address = VAULT_ADDRESS.parse::<Pubkey>().unwrap())]
+    /// CHECK: This is the vault account
     pub vault: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
-    pub user: Signer<'info>,
 }
 
 #[account]
 pub struct DataAccount {
-    pub user: Pubkey,
     pub bump: u8,
 }
 
