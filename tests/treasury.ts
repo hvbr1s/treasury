@@ -22,19 +22,19 @@ describe("treasury", () => {
     );
     console.log(`PDA account is -> ${pdaAccount} and bump is ${bump}.`)
 
-    // it('Initializes a PDA successfully', async () => {
+    it('Initializes a PDA successfully', async () => {
   
-    //   const tx = await program.rpc.initialize({
-    //     accounts: {
-    //       user: userPubKey,
-    //       pdaAccount: pdaAccount,
-    //       systemProgram: anchor.web3.SystemProgram.programId,
-    //     },
-    //     signers: [user],
-    //   });
+      const tx = await program.rpc.initialize({
+        accounts: {
+          user: userPubKey,
+          pdaAccount: pdaAccount,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        },
+        signers: [user],
+      });
 
-    //   console.log("Transaction signature", tx);
-    // });
+      console.log("Transaction signature", tx);
+    });
   
     it("can withdraw safely!", async () => {
       const program_account = new PublicKey('5y6nvZ2mHWG38oGN6jqUpg2mLFdsiWUBvJNDiQnHUBbS');
