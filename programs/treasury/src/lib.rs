@@ -11,6 +11,7 @@ pub mod pda_treasury{
     use anchor_lang::solana_program::entrypoint_deprecated::ProgramResult;
     use super :: *;
     
+    // Initialize the PDA at address function
     pub fn initialize(ctx: Context<Initialize>) -> ProgramResult{
         let account_data = &mut ctx.accounts.pda_account;
         account_data.bump = ctx.bumps.pda_account; // stored bump
@@ -18,6 +19,7 @@ pub mod pda_treasury{
         msg!("Found the PDA address-> {} and the Bump {}", pda, bump_seed);
         Ok(())
     }
+    // Withdraw to vault function
     pub fn withdraw(ctx: Context<Withdraw>, lamports: u64) -> ProgramResult {
         let from = ctx.accounts.treasury.to_account_info();
         let to = ctx.accounts.vault.to_account_info();
