@@ -8,6 +8,7 @@
 - anchor test --skip-deploy --skip-local-validator
 - solana-keygen grind --starts-with <PREFIX>:1
 - solana-test-validator --reset
+- solana program close <PROGRAM_ID> --bypass-warning
 
 ## Deploying PDA checklist
 
